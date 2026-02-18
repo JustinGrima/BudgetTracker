@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model FiscalYear {
+  id         String       @id @default(cuid())
+  label      String       @unique
+  startYear  Int
+  startMonth Int          @default(7)
+  createdAt  DateTime     @default(now())
+  months     FiscalMonth[]
+}
+
+model FiscalMonth {
+  id           String             @id @default(cuid())
+  fiscalYearId String
+  fiscalYear   FiscalYear         @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+  monthKey     String
+  monthIndex   Int
+  createdAt    DateTime           @default(now())
+  expected     ExpectedOverride[]
+  transactions Transaction[]
+
+  @@unique([fiscalYearId, monthIndex])
+  @@unique([monthKey, fiscalYearId])
+}
+
+model Group {
+  id        String    @id @default(cuid())
+  kind      String
+  name      String
+  sortOrder Int
+  createdAt DateTime  @default(now())
+  lineItems LineItem[]
+
+  @@unique([kind, name])
+}
+
+model LineItem {
+  id                   String   @id @default(cuid())
+  groupId              String
+  group                Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name                 String
+  sortOrder            Int
+  defaultExpectedCents Int      @default(0)
+  createdAt            DateTime @default(now())
+  expectedOverrides    ExpectedOverride[]
+
+  @@unique([groupId, name])
+}
+
+model ExpectedOverride {
+  id            String      @id @default(cuid())
+  fiscalMonthId String
+  lineItemId    String
+  expectedCents Int
+  fiscalMonth   FiscalMonth @relation(fields: [fiscalMonthId], references: [id], onDelete: Cascade)
+  lineItem      LineItem    @relation(fields: [lineItemId], references: [id], onDelete: Cascade)
+
+  @@unique([fiscalMonthId, lineItemId])
+}
+
+model Transaction {
+  id            String      @id @default(cuid())
+  fiscalMonthId String
+  fiscalMonth   FiscalMonth @relation(fields: [fiscalMonthId], references: [id], onDelete: Restrict)
+  date          DateTime
+  amountCents   Int
+  kind          String
+  groupName     String
+  lineItemName  String
+  note          String?
+  createdAt     DateTime    @default(now())
+}
+
+model Settings {
+  id                  Int     @id
+  activeFiscalYearId  String?
+  activeFiscalMonthId String?
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  action     String
+  entityType String
+  entityId   String?
+  payload    String?
+}
