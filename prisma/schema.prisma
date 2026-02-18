@@ -7,16 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum GroupKind {
-  INCOME
-  EXPENSE
-}
-
-enum TransactionKind {
-  INCOME
-  EXPENSE
-}
-
 model FiscalYear {
   id         String       @id @default(cuid())
   label      String       @unique
@@ -42,7 +32,7 @@ model FiscalMonth {
 
 model Group {
   id        String    @id @default(cuid())
-  kind      GroupKind
+  kind      String
   name      String
   sortOrder Int
   createdAt DateTime  @default(now())
@@ -76,24 +66,22 @@ model ExpectedOverride {
 }
 
 model Transaction {
-  id            String          @id @default(cuid())
+  id            String      @id @default(cuid())
   fiscalMonthId String
-  fiscalMonth   FiscalMonth     @relation(fields: [fiscalMonthId], references: [id], onDelete: Restrict)
+  fiscalMonth   FiscalMonth @relation(fields: [fiscalMonthId], references: [id], onDelete: Restrict)
   date          DateTime
   amountCents   Int
-  kind          TransactionKind
+  kind          String
   groupName     String
   lineItemName  String
   note          String?
-  createdAt     DateTime        @default(now())
+  createdAt     DateTime    @default(now())
 }
 
 model Settings {
-  id                  Int          @id
+  id                  Int     @id
   activeFiscalYearId  String?
   activeFiscalMonthId String?
-  activeFiscalYear    FiscalYear?  @relation(fields: [activeFiscalYearId], references: [id], onDelete: Restrict)
-  activeFiscalMonth   FiscalMonth? @relation(fields: [activeFiscalMonthId], references: [id], onDelete: Restrict)
 }
 
 model AuditEvent {
